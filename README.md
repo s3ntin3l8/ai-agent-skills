@@ -1,6 +1,6 @@
 # ai-agent-skills
 
-Björn Hansen's personal collection of reusable [Claude Code](https://claude.com/claude-code)
+My personal collection of reusable [Claude Code](https://claude.com/claude-code)
 skills, packaged as a plugin marketplace so they can be installed the same way — locally
 or in CI — across any repo, instead of copy-pasted and drifting.
 
