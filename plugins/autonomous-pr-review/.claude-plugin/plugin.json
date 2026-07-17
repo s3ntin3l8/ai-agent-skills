@@ -1,0 +1,8 @@
+{
+  "name": "autonomous-pr-review",
+  "description": "Generic autonomous PR review methodology: verify before flagging, check PR-description metadata against the repo's own documented conventions, recognize restraint the repo's own style deliberately practices, and post findings with mandatory inline anchoring plus a mechanically-derived verdict.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Björn Hansen"
+  }
+}

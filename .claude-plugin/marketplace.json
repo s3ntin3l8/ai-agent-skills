@@ -1,0 +1,19 @@
+{
+  "name": "ai-agent-skills",
+  "id": "ai-agent-skills",
+  "owner": {
+    "name": "Björn Hansen"
+  },
+  "metadata": {
+    "description": "Björn Hansen's personal collection of reusable Claude Code skills.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "autonomous-pr-review",
+      "source": "./plugins/autonomous-pr-review",
+      "description": "Generic autonomous PR review methodology: verify before flagging, check PR-description metadata against the repo's own documented conventions, recognize restraint the repo's own style deliberately practices, and post findings with mandatory inline anchoring plus a mechanically-derived verdict. Repo-agnostic — pairs with a repo-specific companion skill for domain invariants.",
+      "category": "development"
+    }
+  ]
+}

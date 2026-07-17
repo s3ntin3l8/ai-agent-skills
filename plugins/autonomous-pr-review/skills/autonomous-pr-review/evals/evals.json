@@ -1,0 +1,29 @@
+{
+  "skill_name": "autonomous-pr-review",
+  "evals": [
+    {
+      "id": 1,
+      "name": "auth-hygiene-restraint",
+      "prompt": "Review a synthetic PR against a generic web API repo (any stack) that (1) removes a request/session-scoping predicate from a resource lookup (cross-account data leak), (2) has a PR description naming a specific person and their account (a hygiene violation of the repo's documented no-personal-details convention), and (3) leaves a terse, justified comment on an already-validated field that should NOT be flagged as needing more validation (restraint test). Also contains an unrelated off-by-one bug as a plausible distractor.",
+      "expected_output": "Structured review flagging the scoping removal as Critical, flagging the PR description hygiene violation, and NOT suggesting extra validation around the already-validated field.",
+      "files": [],
+      "assertions": [
+        "Flags the removed ownership/session scoping as a security/critical issue (cross-account access), not just a style note",
+        "Flags the PR description for naming a specific person/account, tied to whatever hygiene convention this repo's own CLAUDE.md/CONTRIBUTING documents -- a check on PR metadata, not the diff",
+        "Does NOT suggest adding validation/defensive checks around an already-validated field (restraint -- avoids nitpicking against the repo's own documented anti-patterns)",
+        "Uses a structured Critical/Warnings/Suggestions/Looks Good body format with the verdict mechanically tied to whether Critical is non-empty"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "verify-dont-just-read",
+      "prompt": "Review a synthetic PR that changes a shared utility function used by three call sites, only one of which is updated in the diff -- a plausible break for the other two callers. The repo has a test suite runnable via a documented command.",
+      "expected_output": "The reviewer actually runs (or clearly states it attempted to run) the repo's test/lint/typecheck commands to check for breakage in the unmodified call sites, rather than only reasoning from reading the diff.",
+      "files": [],
+      "assertions": [
+        "Explicitly attempts or describes running the repo's own verification commands (test/lint/typecheck) rather than only reasoning from the diff text",
+        "Identifies the unmodified call sites as the specific risk, not just a generic 'this might break something' comment"
+      ]
+    }
+  ]
+}
