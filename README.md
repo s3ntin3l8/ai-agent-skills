@@ -35,3 +35,7 @@ with:
   posting discipline (mandatory inline anchoring, a mechanically-derived verdict).
   Deliberately carries no repo-specific domain knowledge — pair it with a companion
   skill in each repo's own `.claude/skills/` for that repo's domain invariants.
+
+## License
+
+AGPL-3.0
