@@ -1,6 +1,6 @@
 {
   "name": "audit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "One structure for every audit (UI/UX, security, performance, code health): a committed six-part report, local-only evidence, and a generic Playwright capture script for visual audits.",
   "author": {
     "name": "Björn Hansen"

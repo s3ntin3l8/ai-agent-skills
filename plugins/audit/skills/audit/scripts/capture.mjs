@@ -18,7 +18,17 @@
 //                                            //   output instead of polling. Use it when the server
 //                                            //   answers before the demo is seeded.
 //     "startTimeoutSec": 120,
-//     "routes": ["/", "/{locale}/settings"], // required; "{locale}" is replaced by "locale"
+//     "routes": [                            // required; "{locale}" is replaced by "locale"
+//       "/",                                 //   a path: captured as loaded
+//       { "name": "certificates",            //   or an object, for a view that needs interaction:
+//         "path": "/",                       //   path (default "/")
+//         "localStorage": { "tab": "certs" },//   keys set before the page loads
+//         "steps": [                         //   run in order after load, then the shot is taken
+//           { "click": "text=Certificates" },
+//           { "waitFor": ".cert-table" }
+//         ],
+//         "settle": ".cert-table tr" }       //   a selector (or ms) to wait for before the shot
+//     ],
 //     "locale": "en",                        // optional; also sets the browser locale
 //     "viewports": {                         // optional; these are the defaults
 //       "phone":  { "width": 390,  "height": 844 },
@@ -34,8 +44,11 @@
 //                                            //   Node tooling is not at the root (e.g. a Python backend)
 //   }
 //
-// Each route is captured as loaded; there is no way to click through to a state yet, so a
-// single-page app whose interesting views need interaction shows only its landing state.
+// Steps are declarative, one action each: {"click": sel}, {"hover": sel}, {"fill": sel,
+// "value": text}, {"press": key}, {"waitFor": sel}, {"wait": ms (max 5000)}. Selectors are
+// Playwright selectors ("text=Save", "[data-testid=x]"). There is no arbitrary code in the config.
+// An object route needs a unique "name" (it names the PNG). Every route gets a fresh browser
+// context, so one route's clicks and storage never leak into the next.
 //
 // Needs `playwright` installed in the repo or in `nodeDir` (and its browsers:
 // `npx playwright install chromium`).
@@ -139,6 +152,51 @@ function stop(child) {
 const routeSlug = (route) =>
   route.replace(/^\/+|\/+$/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "home";
 
+const STEP_ACTIONS = ["click", "hover", "fill", "press", "waitFor", "wait"];
+const MAX_WAIT_MS = 5000;
+const STEP_TIMEOUT_MS = 10_000;
+
+// Turns each config route (string or object) into { name, path, steps, localStorage, settle },
+// failing on a malformed entry before anything is started.
+function normalizeRoutes(cfg) {
+  const seen = new Set();
+  return cfg.routes.map((route, i) => {
+    const where = `routes[${i}]`;
+    const obj = typeof route === "string" ? { path: route } : route;
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) fail(`${where} must be a path string or an object`);
+    const resolve = (v) => v.replaceAll("{locale}", cfg.locale ?? "");
+    const routePath = resolve(obj.path ?? "/");
+    const interactive = Boolean(obj.steps?.length || obj.localStorage || obj.settle !== undefined);
+    if (interactive && !obj.name) fail(`${where} (${routePath}) has steps, localStorage or settle, so it needs a "name"`);
+    const name = obj.name ? routeSlug(obj.name) : routeSlug(routePath);
+    if (seen.has(name)) fail(`${where}: the name "${name}" is used twice; give each route a unique name`);
+    seen.add(name);
+    const steps = obj.steps ?? [];
+    if (!Array.isArray(steps)) fail(`${where}.steps must be an array`);
+    steps.forEach((step, j) => {
+      const actions = STEP_ACTIONS.filter((a) => a in (step ?? {}));
+      if (actions.length !== 1) fail(`${where}.steps[${j}] needs exactly one of ${STEP_ACTIONS.join(", ")}`);
+      const [action] = actions;
+      if (action === "wait" && !(step.wait >= 0 && step.wait <= MAX_WAIT_MS)) fail(`${where}.steps[${j}]: wait must be 0-${MAX_WAIT_MS} ms`);
+      if (action === "fill" && typeof step.value !== "string") fail(`${where}.steps[${j}]: fill needs a string "value"`);
+      if (action !== "wait" && typeof step[action] !== "string") fail(`${where}.steps[${j}]: ${action} needs a string`);
+    });
+    if (obj.localStorage && (typeof obj.localStorage !== "object" || Object.values(obj.localStorage).some((v) => typeof v !== "string"))) {
+      fail(`${where}.localStorage must map keys to string values`);
+    }
+    return { name, path: routePath, steps, localStorage: obj.localStorage, settle: obj.settle };
+  });
+}
+
+async function runStep(page, step) {
+  if ("click" in step) await page.click(step.click);
+  else if ("hover" in step) await page.hover(step.hover);
+  else if ("fill" in step) await page.fill(step.fill, step.value);
+  else if ("press" in step) await page.keyboard.press(step.press);
+  else if ("waitFor" in step) await page.waitForSelector(step.waitFor, { state: "visible" });
+  else await page.waitForTimeout(step.wait);
+}
+
 async function main() {
   const { slug, config } = parseArgs(process.argv.slice(2));
   const cfg = loadConfig(config);
@@ -147,6 +205,8 @@ async function main() {
   if (!pw) fail(`playwright is not installed in ${cfg.nodeDir ? `${cfg.nodeDir}/ or the repo root` : "this repo"}; run \`npm i -D playwright && npx playwright install chromium\` in ${cfg.nodeDir ? `${cfg.nodeDir}/` : "the repo root"}, or set "nodeDir" in capture.json to where it is installed`);
   const axeMod = cfg.axe ? resolveFromRepo("@axe-core/playwright", cfg.nodeDir) : null;
   if (cfg.axe && !axeMod) console.warn("capture: axe requested but @axe-core/playwright is not installed; skipping axe");
+
+  const routes = normalizeRoutes(cfg);
 
   const root = process.cwd();
   const assetsRoot = path.resolve(root, "docs/audit/assets");
@@ -191,27 +251,40 @@ async function main() {
 
     for (const [vpName, viewport] of Object.entries(viewports)) {
       for (const scheme of schemes) {
-        const context = await browser.newContext({
-          viewport,
-          colorScheme: scheme ?? undefined,
-          locale: cfg.locale,
-          storageState: cfg.storageState,
-          deviceScaleFactor: vpName === "phone" ? 2 : 1,
-        });
-        const page = await context.newPage();
-        for (const route of cfg.routes) {
-          const resolved = route.replaceAll("{locale}", cfg.locale ?? "");
-          const url = new URL(resolved, cfg.baseUrl).toString();
-          await page.goto(url, { waitUntil: "networkidle" });
-          const name = [routeSlug(resolved), vpName, scheme].filter(Boolean).join(".");
-          await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage: true });
-          shots++;
-          if (axeMod) {
-            const AxeBuilder = axeMod.default ?? axeMod.AxeBuilder ?? axeMod;
-            axeResults[name] = (await new AxeBuilder({ page }).analyze()).violations;
+        for (const route of routes) {
+          // A fresh context per route: clicks and storage from one route never reach the next.
+          const context = await browser.newContext({
+            viewport,
+            colorScheme: scheme ?? undefined,
+            locale: cfg.locale,
+            storageState: cfg.storageState,
+            deviceScaleFactor: vpName === "phone" ? 2 : 1,
+          });
+          const page = await context.newPage();
+          page.setDefaultTimeout(STEP_TIMEOUT_MS);
+          const name = [route.name, vpName, scheme].filter(Boolean).join(".");
+          try {
+            if (route.localStorage) {
+              await page.addInitScript((items) => {
+                for (const [k, v] of Object.entries(items)) window.localStorage.setItem(k, v);
+              }, route.localStorage);
+            }
+            await page.goto(new URL(route.path, cfg.baseUrl).toString(), { waitUntil: "networkidle" });
+            for (const step of route.steps) await runStep(page, step);
+            if (typeof route.settle === "number") await page.waitForTimeout(Math.min(route.settle, MAX_WAIT_MS));
+            else if (route.settle) await page.waitForSelector(route.settle, { state: "visible" });
+            await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage: true });
+            shots++;
+            if (axeMod) {
+              const AxeBuilder = axeMod.default ?? axeMod.AxeBuilder ?? axeMod;
+              axeResults[name] = (await new AxeBuilder({ page }).analyze()).violations;
+            }
+          } catch (e) {
+            fail(`route "${route.name}" (${vpName}${scheme ? `, ${scheme}` : ""}): ${e.message.split("\n")[0]}`);
+          } finally {
+            await context.close();
           }
         }
-        await context.close();
       }
     }
 
