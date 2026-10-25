@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // Generic visual-audit capture. Run from the repo root:
 //
-//   node <audit skill>/scripts/capture.mjs <slug> [--config docs/audit/capture.json]
+//   node <audit skill>/scripts/capture.mjs <slug> [--config <path>]
+//
+// Config: docs/audit/capture.<slug>.json when it exists (an audit whose routes or ports
+// differ from the repo's usual ones), otherwise docs/audit/capture.json.
 //
 // <slug> is the report's slug (YYYY-MM-<scope>-<topic>). PNGs (and optional axe JSON)
 // are written to docs/audit/assets/<slug>/ and nowhere else; that folder is gitignored.
@@ -51,7 +54,7 @@ function fail(msg) {
 }
 
 function parseArgs(argv) {
-  const args = { slug: null, config: "docs/audit/capture.json" };
+  const args = { slug: null, config: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--config") args.config = argv[++i] ?? fail("--config needs a path");
     else if (!args.slug) args.slug = argv[i];
@@ -59,6 +62,9 @@ function parseArgs(argv) {
   }
   if (!args.slug) fail("usage: capture.mjs <slug> [--config <path>]");
   if (!SLUG_RE.test(args.slug)) fail(`slug must look like YYYY-MM-<scope>-<topic>, got "${args.slug}"`);
+  args.config ??= existsSync(`docs/audit/capture.${args.slug}.json`)
+    ? `docs/audit/capture.${args.slug}.json`
+    : "docs/audit/capture.json";
   return args;
 }
 

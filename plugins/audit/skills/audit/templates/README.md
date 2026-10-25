@@ -7,7 +7,7 @@ evidence is local. Structure, naming and rules: the `audit` skill
 ## This repo
 
 - **Scope token:** `<ui dir, or product surface name>`
-- **Capture:** `<command, if this repo has a visual surface; config in capture.json>`
+- **Capture:** `<command, if this repo has a visual surface; config in capture.json, or capture.<slug>.json for an audit that needs different routes>`
 
 ## Index
 

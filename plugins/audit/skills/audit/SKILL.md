@@ -58,7 +58,8 @@ Start from `templates/report.md`.
 
 ## Visual capture
 
-`node <this skill>/scripts/capture.mjs <slug>` reads `docs/audit/capture.json`, starts
+`node <this skill>/scripts/capture.mjs <slug>` reads `docs/audit/capture.<slug>.json`,
+else `docs/audit/capture.json` (the repo's usual config), starts
 the repo's demo, captures every route at phone and tablet, and writes only into
 `docs/audit/assets/<slug>/`. The config shape and options are in the script's header.
 A repo with no isolated demo instance needs one before a visual audit; code audits
