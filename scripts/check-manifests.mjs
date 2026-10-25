@@ -34,6 +34,15 @@ function git(...args) {
 
 const baseIdx = process.argv.indexOf("--base");
 const base = baseIdx === -1 ? null : (process.argv[baseIdx + 1] ?? err("--base needs a ref"));
+let baseUsable = Boolean(base);
+if (base) {
+  try {
+    git("rev-parse", "--verify", "--quiet", `${base}^{commit}`);
+  } catch {
+    err(`--base ${base} does not resolve to a commit (not fetched?); the version-bump check cannot run`);
+    baseUsable = false;
+  }
+}
 
 const plugins = existsSync("plugins")
   ? readdirSync("plugins", { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)
@@ -62,19 +71,21 @@ for (const name of plugins) {
 
   const inClaude = claudeMarket?.plugins?.find((p) => p.name === name);
   if (claudeMarket && !inClaude) err(`${CLAUDE_MARKETPLACE}: no entry for "${name}"`);
-  if (inClaude && !existsSync(path.join(inClaude.source ?? "", "."))) err(`${CLAUDE_MARKETPLACE}: source "${inClaude.source}" for "${name}" does not exist`);
+  if (inClaude && !(typeof inClaude.source === "string" && existsSync(inClaude.source))) err(`${CLAUDE_MARKETPLACE}: "${name}" has no source, or its source "${inClaude.source}" does not exist`);
   const inCodex = codexMarket?.plugins?.find((p) => p.name === name);
   if (codexMarket && !inCodex) err(`${CODEX_MARKETPLACE}: no entry for "${name}"`);
-  if (inCodex && !existsSync(path.join(inCodex.source?.path ?? "", "."))) err(`${CODEX_MARKETPLACE}: path "${inCodex.source?.path}" for "${name}" does not exist`);
+  if (inCodex && !(typeof inCodex.source?.path === "string" && existsSync(inCodex.source.path))) err(`${CODEX_MARKETPLACE}: "${name}" has no source.path, or its path "${inCodex.source?.path}" does not exist`);
 
-  if (base && versions.size === 1) {
+  if (baseUsable && versions.size === 1) {
     const [version] = versions;
     let baseVersion = null;
+    let existedAtBase = true;
     try {
-      baseVersion = JSON.parse(git("show", `${base}:${dir}/${MANIFESTS[0]}`)).version;
+      git("cat-file", "-e", `${base}:${dir}/${MANIFESTS[0]}`);
     } catch {
-      // a plugin that is new relative to base needs no bump
+      existedAtBase = false; // a plugin that is new relative to base needs no bump
     }
+    if (existedAtBase) baseVersion = JSON.parse(git("show", `${base}:${dir}/${MANIFESTS[0]}`)).version;
     if (baseVersion !== null) {
       const changed = git("diff", "--name-only", `${base}...HEAD`, "--", dir).split("\n").filter(Boolean);
       if (changed.length > 0 && version === baseVersion) {
