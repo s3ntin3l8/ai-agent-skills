@@ -62,4 +62,4 @@ Start from `templates/report.md`.
 the repo's demo, captures every route at phone and tablet, and writes only into
 `docs/audit/assets/<slug>/`. The config shape and options are in the script's header.
 A repo with no isolated demo instance needs one before a visual audit; code audits
-do not.
+do not. The demo contract is in `references/demo.md`.
