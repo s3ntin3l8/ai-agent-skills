@@ -28,13 +28,17 @@
 //                                            //   scheme to each file name. Omit it for apps that pick
 //                                            //   their own theme.
 //     "storageState": "path/to/state.json",  // optional; a logged-in Playwright state
-//     "axe": false                           // optional; needs @axe-core/playwright in the repo
+//     "axe": false,                          // optional; needs @axe-core/playwright in the repo
+//     "nodeDir": "frontend"                  // optional; resolve playwright (and axe) from this
+//                                            //   subfolder first, then the repo root. For repos whose
+//                                            //   Node tooling is not at the root (e.g. a Python backend)
 //   }
 //
 // Each route is captured as loaded; there is no way to click through to a state yet, so a
 // single-page app whose interesting views need interaction shows only its landing state.
 //
-// Needs `playwright` installed in the repo (and its browsers: `npx playwright install chromium`).
+// Needs `playwright` installed in the repo or in `nodeDir` (and its browsers:
+// `npx playwright install chromium`).
 
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
@@ -84,12 +88,18 @@ function loadConfig(file) {
   return cfg;
 }
 
-function resolveFromRepo(name) {
-  try {
-    return createRequire(path.join(process.cwd(), "package.json"))(name);
-  } catch {
-    return null;
+// Resolve a package from `nodeDir` first (a subfolder that holds the repo's Node tooling,
+// e.g. "frontend"), then from the repo root.
+function resolveFromRepo(name, nodeDir) {
+  const dirs = [nodeDir && path.resolve(process.cwd(), nodeDir), process.cwd()].filter(Boolean);
+  for (const dir of dirs) {
+    try {
+      return createRequire(path.join(dir, "package.json"))(name);
+    } catch {
+      // try the next directory
+    }
   }
+  return null;
 }
 
 async function waitForOutput(matched, timeoutSec, child) {
@@ -133,9 +143,9 @@ async function main() {
   const { slug, config } = parseArgs(process.argv.slice(2));
   const cfg = loadConfig(config);
 
-  const pw = resolveFromRepo("playwright");
-  if (!pw) fail("playwright is not installed in this repo; run `npm i -D playwright && npx playwright install chromium`");
-  const axeMod = cfg.axe ? resolveFromRepo("@axe-core/playwright") : null;
+  const pw = resolveFromRepo("playwright", cfg.nodeDir);
+  if (!pw) fail(`playwright is not installed in ${cfg.nodeDir ? `${cfg.nodeDir}/ or the repo root` : "this repo"}; run \`npm i -D playwright && npx playwright install chromium\` in ${cfg.nodeDir ? `${cfg.nodeDir}/` : "the repo root"}, or set "nodeDir" in capture.json to where it is installed`);
+  const axeMod = cfg.axe ? resolveFromRepo("@axe-core/playwright", cfg.nodeDir) : null;
   if (cfg.axe && !axeMod) console.warn("capture: axe requested but @axe-core/playwright is not installed; skipping axe");
 
   const root = process.cwd();

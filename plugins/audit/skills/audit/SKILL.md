@@ -61,6 +61,6 @@ Start from `templates/report.md`.
 `node <this skill>/scripts/capture.mjs <slug>` reads `docs/audit/capture.<slug>.json`,
 else `docs/audit/capture.json` (the repo's usual config), starts
 the repo's demo, captures every route at phone and tablet, and writes only into
-`docs/audit/assets/<slug>/`. The config shape and options are in the script's header.
+`docs/audit/assets/<slug>/`. The config shape and options are in the script's header (including `nodeDir`, for a repo that keeps its Node tooling in a subfolder).
 A repo with no isolated demo instance needs one before a visual audit; code audits
 do not. The demo contract is in `references/demo.md`.

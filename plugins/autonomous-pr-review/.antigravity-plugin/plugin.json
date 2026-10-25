@@ -1,0 +1,18 @@
+{
+  "name": "autonomous-pr-review",
+  "displayName": "Autonomous PR review",
+  "version": "0.1.0",
+  "description": "Generic autonomous PR review methodology: verify before flagging, check PR-description metadata against the repo's own documented conventions, recognize restraint the repo's own style deliberately practices, and post findings with mandatory inline anchoring plus a mechanically-derived verdict.",
+  "author": {
+    "name": "Björn Hansen"
+  },
+  "homepage": "https://github.com/s3ntin3l8/ai-agent-skills",
+  "repository": "https://github.com/s3ntin3l8/ai-agent-skills",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "code-review",
+    "pull-request",
+    "review",
+    "ci"
+  ]
+}
