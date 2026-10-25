@@ -14,6 +14,12 @@
       "source": "./plugins/autonomous-pr-review",
       "description": "Generic autonomous PR review methodology: verify before flagging, check PR-description metadata against the repo's own documented conventions, recognize restraint the repo's own style deliberately practices, and post findings with mandatory inline anchoring plus a mechanically-derived verdict. Repo-agnostic — pairs with a repo-specific companion skill for domain invariants.",
       "category": "development"
+    },
+    {
+      "name": "audit",
+      "source": "./plugins/audit",
+      "description": "One structure for every audit (UI/UX, security, performance, code health): a committed six-part report, local-only evidence, and a generic Playwright capture script for visual audits. Repo-agnostic; each repo keeps only an index and its capture config in docs/audit/.",
+      "category": "development"
     }
   ]
 }

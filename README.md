@@ -36,6 +36,12 @@ with:
   Deliberately carries no repo-specific domain knowledge — pair it with a companion
   skill in each repo's own `.claude/skills/` for that repo's domain invariants.
 
+- **audit** — one structure for every audit (UI/UX, security, performance, code health):
+  a six-part report committed under `docs/audit/`, evidence kept local and gitignored,
+  per-topic method references, and a generic Playwright capture script
+  (`scripts/capture.mjs`, driven by a repo's `docs/audit/capture.json`) for visual
+  audits. Costs one description line of context until an audit is actually run.
+
 ## License
 
 Copyright (C) 2026 Björn Hansen
