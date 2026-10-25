@@ -96,6 +96,16 @@ the plugins are re-converged persistently.
   (`scripts/capture.mjs`, driven by a repo's `docs/audit/capture.json`) for visual
   audits. Costs one description line of context until an audit is actually run.
 
+## Contributing: bump the version
+
+Claude Code and Codex update an installed plugin only when its `version` changes, so a
+content change without a bump never reaches an existing install. When you change anything
+under `plugins/<name>/`, bump `version` in all three of its manifests
+(`.claude-plugin`, `.codex-plugin`, `.antigravity-plugin`). CI runs
+`node scripts/check-manifests.mjs --base origin/BRANCH` on every pull request (`BRANCH` is the pull request's base branch) and fails when
+the manifests disagree, a plugin is missing from a marketplace, or a changed plugin kept its
+old version. Run it without `--base` to check consistency only.
+
 ## License
 
 Copyright (C) 2026 Björn Hansen
