@@ -47,7 +47,7 @@
 // Steps are declarative, one action each: {"click": sel}, {"hover": sel}, {"fill": sel,
 // "value": text}, {"press": key}, {"waitFor": sel}, {"wait": ms (max 5000)}. Selectors are
 // Playwright selectors ("text=Save", "[data-testid=x]"). There is no arbitrary code in the config.
-// An object route needs a unique "name" (it names the PNG; names compare case-insensitively).
+// An object route needs a unique "name" (it names the PNG; names compare case-insensitively, and PNG names are lowercase).
 // A route that fails is reported at the end and the others are still captured. Every route gets a fresh browser
 // context, so one route's clicks and storage never leak into the next.
 //
@@ -167,7 +167,7 @@ function normalizeRoutes(cfg) {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) fail(`${where} must be a path string or an object`);
     if (obj.path !== undefined && typeof obj.path !== "string") fail(`${where}.path must be a string`);
     if (obj.name !== undefined && (typeof obj.name !== "string" || !obj.name)) fail(`${where}.name must be a non-empty string`);
-    if (obj.settle !== undefined && typeof obj.settle !== "string" && !(typeof obj.settle === "number" && obj.settle >= 0 && obj.settle <= MAX_WAIT_MS)) {
+    if (obj.settle !== undefined && !(typeof obj.settle === "string" && obj.settle) && !(typeof obj.settle === "number" && obj.settle >= 0 && obj.settle <= MAX_WAIT_MS)) {
       fail(`${where}.settle must be a selector string or a number of ms between 0 and ${MAX_WAIT_MS}`);
     }
     const routePath = (obj.path ?? "/").replaceAll("{locale}", cfg.locale ?? "");
