@@ -102,7 +102,7 @@ Claude Code and Codex update an installed plugin only when its `version` changes
 content change without a bump never reaches an existing install. When you change anything
 under `plugins/<name>/`, bump `version` in all three of its manifests
 (`.claude-plugin`, `.codex-plugin`, `.antigravity-plugin`). CI runs
-`node scripts/check-manifests.mjs --base origin/<base branch>` on every pull request and fails when
+`node scripts/check-manifests.mjs --base origin/BRANCH` on every pull request (`BRANCH` is the pull request's base branch) and fails when
 the manifests disagree, a plugin is missing from a marketplace, or a changed plugin kept its
 old version. Run it without `--base` to check consistency only.
 

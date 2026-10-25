@@ -17,7 +17,7 @@ const CLAUDE_MARKETPLACE = ".claude-plugin/marketplace.json";
 const CODEX_MARKETPLACE = ".agents/plugins/marketplace.json";
 
 const errors = [];
-const err = (msg) => errors.push(msg);
+const err = (msg) => void errors.push(msg);
 
 function readJson(file) {
   try {
