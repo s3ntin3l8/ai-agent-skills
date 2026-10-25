@@ -1,0 +1,20 @@
+name: Check manifests
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the bump check diffs against the base branch
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Manifests agree, and a changed plugin has a new version
+        run: node scripts/check-manifests.mjs --base "origin/${{ github.base_ref }}"
