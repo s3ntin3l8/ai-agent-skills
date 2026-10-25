@@ -11,6 +11,9 @@
 //     "baseUrl": "http://127.0.0.1:3957",   // required; must be loopback (never a live instance)
 //     "start": "make demo",                  // optional; started first, stopped at the end
 //     "ready": "http://127.0.0.1:3957/",    // optional; polled until it answers (default: baseUrl)
+//     "readyOutput": "demo is up",           // optional regex; wait for it in the start command's
+//                                            //   output instead of polling. Use it when the server
+//                                            //   answers before the demo is seeded.
 //     "startTimeoutSec": 120,
 //     "routes": ["/", "/{locale}/settings"], // required; "{locale}" is replaced by "locale"
 //     "locale": "en",                        // optional; also sets the browser locale
@@ -18,10 +21,15 @@
 //       "phone":  { "width": 390,  "height": 844 },
 //       "tablet": { "width": 820,  "height": 1180 }
 //     },
-//     "colorSchemes": ["light", "dark"],     // optional; default ["light"]
+//     "colorSchemes": ["light", "dark"],     // optional; emulates prefers-color-scheme and adds the
+//                                            //   scheme to each file name. Omit it for apps that pick
+//                                            //   their own theme.
 //     "storageState": "path/to/state.json",  // optional; a logged-in Playwright state
 //     "axe": false                           // optional; needs @axe-core/playwright in the repo
 //   }
+//
+// Each route is captured as loaded; there is no way to click through to a state yet, so a
+// single-page app whose interesting views need interaction shows only its landing state.
 //
 // Needs `playwright` installed in the repo (and its browsers: `npx playwright install chromium`).
 
@@ -78,6 +86,16 @@ function resolveFromRepo(name) {
   }
 }
 
+async function waitForOutput(matched, timeoutSec, child) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`start command output did not match readyOutput within ${timeoutSec}s`)), timeoutSec * 1000).unref(),
+  );
+  const exited = new Promise((_, reject) =>
+    child.once("exit", (code) => reject(new Error(`demo command exited early (code ${code})`))),
+  );
+  await Promise.race([matched, timeout, exited]);
+}
+
 async function waitFor(url, timeoutSec, child) {
   const deadline = Date.now() + timeoutSec * 1000;
   while (Date.now() < deadline) {
@@ -127,14 +145,31 @@ async function main() {
 
   let browser;
   try {
+    let matched = null;
     if (cfg.start) {
-      child = spawn(cfg.start, { shell: true, detached: true, stdio: "inherit" });
+      const watchOutput = Boolean(cfg.readyOutput);
+      child = spawn(cfg.start, { shell: true, detached: true, stdio: ["inherit", watchOutput ? "pipe" : "inherit", "inherit"] });
+      if (watchOutput) {
+        const re = new RegExp(cfg.readyOutput);
+        let seen = "";
+        matched = new Promise((resolve) =>
+          child.stdout.on("data", (chunk) => {
+            process.stdout.write(chunk); // still show the demo's output
+            seen += chunk;
+            if (re.test(seen)) resolve();
+          }),
+        );
+      }
+    } else if (cfg.readyOutput) {
+      fail("readyOutput needs a start command to read from");
     }
-    await waitFor(cfg.ready ?? cfg.baseUrl, cfg.startTimeoutSec ?? 120, child);
+    const timeoutSec = cfg.startTimeoutSec ?? 120;
+    if (matched) await waitForOutput(matched, timeoutSec, child);
+    else await waitFor(cfg.ready ?? cfg.baseUrl, timeoutSec, child);
 
     browser = await pw.chromium.launch();
     const viewports = cfg.viewports ?? DEFAULT_VIEWPORTS;
-    const schemes = cfg.colorSchemes ?? ["light"];
+    const schemes = cfg.colorSchemes ?? [null];
     const axeResults = {};
     let shots = 0;
 
@@ -142,7 +177,7 @@ async function main() {
       for (const scheme of schemes) {
         const context = await browser.newContext({
           viewport,
-          colorScheme: scheme,
+          colorScheme: scheme ?? undefined,
           locale: cfg.locale,
           storageState: cfg.storageState,
           deviceScaleFactor: vpName === "phone" ? 2 : 1,
@@ -152,7 +187,7 @@ async function main() {
           const resolved = route.replaceAll("{locale}", cfg.locale ?? "");
           const url = new URL(resolved, cfg.baseUrl).toString();
           await page.goto(url, { waitUntil: "networkidle" });
-          const name = `${routeSlug(resolved)}.${vpName}.${scheme}`;
+          const name = [routeSlug(resolved), vpName, scheme].filter(Boolean).join(".");
           await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage: true });
           shots++;
           if (axeMod) {
