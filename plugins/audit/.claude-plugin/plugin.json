@@ -1,7 +1,7 @@
 {
   "name": "audit",
-  "description": "One structure for every audit (UI/UX, security, performance, code health): a committed six-part report, local-only evidence, and a generic Playwright capture script for visual audits.",
-  "version": "0.2.0",
+  "description": "One structure for every audit (UI/UX, security, performance, code health): a committed six-part report and local-only evidence. Visual evidence comes from the repo's own `make screenshots-audit` (visual-kit).",
+  "version": "0.3.0",
   "author": {
     "name": "Björn Hansen"
   }

@@ -3,8 +3,8 @@ name: audit
 description: >-
   Use when asked to audit a repo (UI/UX, accessibility, security, performance, code
   health) or to write, update or migrate an audit report. Gives the one report
-  structure, naming and evidence rules every repo shares, plus a generic screenshot
-  capture script for visual audits.
+  structure, naming and evidence rules every repo shares. Visual evidence comes from
+  the repo's own `make screenshots-audit` (visual-kit).
 ---
 # Audit
 
@@ -17,7 +17,6 @@ raw output are regenerable, so they are gitignored and never linked.
 ```
 docs/audit/
   README.md                     repo-specific: index, scope tokens, capture command
-  capture.json                  visual audits only; see scripts/capture.mjs
   YYYY-MM-<scope>-<topic>.md    one report per audit (committed)
   assets/<same slug>/           gitignored; captures and raw output
 ```
@@ -56,11 +55,15 @@ Start from `templates/report.md`.
 - Record what was checked and found healthy, so nobody "fixes" it later.
 - Capture from an isolated demo instance, never a live one.
 
-## Visual capture
+## Visual evidence
 
-`node <this skill>/scripts/capture.mjs <slug>` reads `docs/audit/capture.<slug>.json`,
-else `docs/audit/capture.json` (the repo's usual config), starts
-the repo's demo, captures every route at phone and tablet, and writes only into
-`docs/audit/assets/<slug>/`. The config shape and options are in the script's header (including `nodeDir`, for a repo that keeps its Node tooling in a subfolder, and per-route `steps`, `localStorage` and `settle` for a single-page app whose views need a click to reach).
-A repo with no isolated demo instance needs one before a visual audit; code audits
-do not. The demo contract is in `references/demo.md`.
+A repo with a visual surface renders its audit evidence with its own `make screenshots-audit AUDIT=<slug>`
+([visual-kit](https://github.com/s3ntin3l8/visual-kit): one pinned image against the repo's isolated demo, every
+scene tagged `audit` in `visual/scenes.json`, desktop, tablet and phone, both themes). It writes
+`docs/audit/assets/<slug>/`: one PNG per shot and `metrics.json` with axe violations, console errors, horizontal
+overflow, controls cut off at the viewport edge and controls without an accessible name. A page that needs a click
+to reach (a menu, a dialog) is a scene with `steps`. Record the visual-kit version from the repo's
+`visual/Dockerfile` in the report's Evidence section, so the capture can be reproduced after the image moves.
+
+A repo without it needs visual-kit set up first (the `visual-check` skill describes how; the demo contract is in
+`references/demo.md`); code audits do not.

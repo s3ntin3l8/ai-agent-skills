@@ -1,9 +1,10 @@
 # The demo instance contract
 
-A visual audit captures from an **isolated demo instance**, never a live one. Four repos
-(mullion, runway, branchdam, pocket-portfolio) already build one the same way. This file
-writes down what they share so a new repo can follow it. It standardises the *contract*,
-not the code: the servers, the seeding and the auth bypass differ too much to share.
+A visual audit (and every screenshot or visual check) captures from an **isolated demo instance**, never a live
+one. Five repos (mullion, runway, branchdam, pocket-portfolio, sanctuary) build one the same way. This file writes
+down what they share so a new repo can follow it. It standardises the *contract*, not the code: the servers, the
+seeding and the auth bypass differ too much to share. The full spec of what renders it (profiles, `scenes.json`,
+make targets) is visual-kit's `CONTRACT.md`.
 
 ## The contract
 
@@ -18,18 +19,21 @@ not the code: the servers, the seeding and the auth bypass differ too much to sh
 4. **Loopback only.** Bind `127.0.0.1`. A fixed high port per repo is fine; it must be
    overridable.
 5. **Seeded, fictional data** (`example.com`, `.invalid`, RFC 5737 addresses). Shapes are
-   deterministic (a fixed RNG seed); dates relative to now are fine. Seed before the ready
-   line, through the app's own code paths where they exist.
+   deterministic (a fixed RNG seed). Dates relative to now must follow one anchor: the demo
+   honours `DEMO_NOW=<ISO date-time>` (fix the clock of the seed and the server, e.g. with `time-machine` in
+   Python), and `visual/scenes.json` sets the same instant as `clock` for the browser, so "3 days late" reads the
+   same on any day and a before/after check compares like with like. Seed before the ready line, through the
+   app's own code paths where they exist.
 6. **No manual login.** Bypass by construction (loopback with no admin key, forward-auth
    headers, a minted session), never with a real credential.
 7. **A ready line on stdout**, printed only after the instance is seeded and serving, so
-   a caller can wait for it instead of polling a URL that answers early. The existing repos
-   print a prose line (`[demo] Runway demo is up: <url>`); `capture.json`'s `readyOutput`
-   matches whatever the repo prints. New repos should print `DEMO_READY url=<url>`.
+   a caller can wait for it instead of polling a URL that answers early: `DEMO_READY url=<url>`
+   (`demo.readyOutput` in `visual/scenes.json` is the regex that matches it).
 8. **Clean teardown on SIGINT and SIGTERM**: signal the whole process group, TERM then
    KILL after a grace period, remove the scratch directory. Handle SIGTERM explicitly;
-   the capture script stops the demo with it.
-9. **A route list** in `docs/audit/capture.json`, and the viewports and themes in it.
+   the capture stops the demo with it.
+9. **A scene list** in `visual/scenes.json` (routes, the steps to reach a state, tags), which also carries the
+   demo command, its URL and the fixed clock.
 
 ## What stays per repo
 
