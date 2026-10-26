@@ -1,0 +1,20 @@
+{
+  "name": "visual-check",
+  "displayName": "Visual check",
+  "version": "0.1.0",
+  "description": "Per-change visual check for UI work: render the touched routes on the merge base and on the working tree in one pinned image, read the diff and the axe/console/overflow deltas, and write the PR's Visual check section. Also README and landing-page screenshots from the same pipeline (visual-kit).",
+  "author": {
+    "name": "Björn Hansen"
+  },
+  "homepage": "https://github.com/s3ntin3l8/ai-agent-skills",
+  "repository": "https://github.com/s3ntin3l8/ai-agent-skills",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "visual-check",
+    "screenshots",
+    "ui",
+    "visual-regression",
+    "accessibility",
+    "playwright"
+  ]
+}

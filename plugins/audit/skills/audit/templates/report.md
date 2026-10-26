@@ -45,7 +45,7 @@ The permanent checks that keep these findings fixed (test, lint rule, CI step).
 How to regenerate it. A command, never a link to a file:
 
 ```bash
-node <audit skill>/scripts/capture.mjs YYYY-MM-<scope>-<topic>
+make screenshots-audit AUDIT=YYYY-MM-<scope>-<topic>   # visual-kit version: <tag in visual/Dockerfile>
 ```
 
 ---
