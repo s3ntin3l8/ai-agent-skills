@@ -45,7 +45,8 @@ env denylist patterns.
 
 - A server answers before it is seeded. Wait for the ready line, not a URL. (Mullion's
   first capture showed a "server unreachable" banner this way.)
-- A single-page app with no routes shows only its landing state. Capture needs steps.
+- A single-page app with no routes shows only its landing state. Capture needs a scene with `steps` in
+  `visual/scenes.json` (click, fill, wait) for each state worth seeing.
 - `networkidle` never settles on a page with an open SSE or WebSocket stream.
 - A default that points at the real dev database or data directory. Always set it
   explicitly in the demo, and make the guard refuse the default.

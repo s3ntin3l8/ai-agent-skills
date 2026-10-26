@@ -60,10 +60,12 @@ Start from `templates/report.md`.
 A repo with a visual surface renders its audit evidence with its own `make screenshots-audit AUDIT=<slug>`
 ([visual-kit](https://github.com/s3ntin3l8/visual-kit): one pinned image against the repo's isolated demo, every
 scene tagged `audit` in `visual/scenes.json`, desktop, tablet and phone, both themes). It writes
-`docs/audit/assets/<slug>/`: one PNG per shot and `metrics.json` with axe violations, console errors, horizontal
+`docs/audit/assets/<slug>/` (`AUDIT` must be the slug: lowercase letters, digits and hyphens, `YYYY-MM-<scope>-<topic>`): one PNG per shot and `metrics.json` with axe violations, console errors, horizontal
 overflow, controls cut off at the viewport edge and controls without an accessible name. A page that needs a click
 to reach (a menu, a dialog) is a scene with `steps`. Record the visual-kit version from the repo's
 `visual/Dockerfile` in the report's Evidence section, so the capture can be reproduced after the image moves.
 
-A repo without it needs visual-kit set up first (the `visual-check` skill describes how; the demo contract is in
-`references/demo.md`); code audits do not.
+If any scene fails, the previous contents of `assets/<slug>/` are left untouched, so delete the folder (or fix the
+scene and rerun) before trusting evidence next to a new report. A repo without it needs visual-kit set up first
+([visual-kit's `CONTRACT.md`](https://github.com/s3ntin3l8/visual-kit/blob/main/CONTRACT.md); the `visual-check`
+skill summarises it; the demo contract is in `references/demo.md`); code audits do not.

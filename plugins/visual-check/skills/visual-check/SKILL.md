@@ -60,7 +60,7 @@ Every UI pull request gets this, written after you looked:
 
 ```markdown
 ## Visual check
-`make visual-check ROUTES=/triage` against origin/main: 6 shots, 2 changed, 0 new.
+`make visual-check ROUTES=/triage` against origin/main: 6 shots compared, 2 changed, 0 new, 0 removed, 4 identical.
 - `triage` desktop/phone: the case cell now shows the title under the id (intended).
 - `triage-filter`: the Proceeding menu lists the AZ first (intended).
 - axe: no new findings. Console, overflow, unnamed controls: unchanged.
@@ -82,17 +82,21 @@ personal-landing pulls the landing set itself (`npm run assets:sync <app>`).
 
 ## A repo without it
 
-Do not improvise a capture script. Follow visual-kit's `CONTRACT.md`: a demo that prints `DEMO_READY` and takes
+Do not improvise a capture script. Follow visual-kit's `CONTRACT.md`
+(https://github.com/s3ntin3l8/visual-kit/blob/main/CONTRACT.md): a demo that prints `DEMO_READY` and takes
 `DEMO_NOW` (the demo contract is also in the `audit` skill's `references/demo.md`), `visual/Dockerfile` (one
-`FROM` line), `visual/scenes.json`, four make targets, the `.gitignore` entries, a rule in the repo's agent file
-that UI changes run `make visual-check`, and optionally the shared `visual-check.yml` workflow for CI. Copy a repo
-that already has it (`sanctuary` is the reference).
+`FROM ghcr.io/s3ntin3l8/visual-kit:<version>` line), `visual/scenes.json`, four make targets, the `.gitignore`
+entries, and a rule in the repo's agent file that UI changes run `make visual-check`. For CI, a caller workflow
+(`.github/workflows/visual.yml`) uses `s3ntin3l8/.github/.github/workflows/visual-check.yml@main` with
+`permissions: contents: read, pull-requests: write` and the repo's `python-version` / `node-version`, plus a
+`.github/visual-setup.sh` that installs what the demo needs. Copy a repo that already has it: `sanctuary` is the
+reference (its `Makefile`, `visual/` and `.github/workflows/visual.yml`).
 
 ## Failure modes
 
 - **Docker or the image pull fails:** the pinned tag must exist (`docker pull` it); never fall back to a host
   Chromium, the pixels would differ from everyone else's.
-- **"refusing to … was not written by visual-kit":** an output folder holds files the tool did not write. It never
-  replaces those silently: look, then rerun with `FORCE=1`.
+- **"… was not written by visual-kit":** an output folder holds files the tool did not write, and it refuses to
+  use or replace it silently: look, then rerun with `FORCE=1`.
 - **Two runs on an unchanged tree differ:** that is a bug in the demo or the scene, not in the check. Find the
   volatile part (a relative date, an avatar, an animation, a late-loading font) and fix or mask it.
